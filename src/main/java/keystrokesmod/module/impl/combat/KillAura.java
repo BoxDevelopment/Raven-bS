@@ -705,13 +705,16 @@ public class KillAura extends Module {
         }
         switch ((int) autoBlockMode.getInput()) {
             case 4: // interact a
+                if (interactTicks >= 3) {
+                    interactTicks = 0;
+                }
                 interactTicks++;
                 if (firstCycle) {
                     switch (interactTicks) {
                         case 1:
                             blinking.set(true);
                             int bestSwapSlot = getBestSwapSlot();
-                            mc.thePlayer.sendQueue.addToSendQueue(new C09PacketHeldItemChange(bestSwapSlot));
+                            mc.thePlayer.sendQueue.addToSendQueue(new C09PacketHeldItemChange( bestSwapSlot));
                             Raven.packetsHandler.playerSlot.set(bestSwapSlot);
                             swapped = true;
                             lag = false;
@@ -730,9 +733,7 @@ public class KillAura extends Module {
                             break;
                     }
                 }
-                if (interactTicks >= 3) {
-                    interactTicks = 0;
-                } else {
+                else {
                     switch (interactTicks) {
                         case 1:
                             break;
@@ -740,7 +741,7 @@ public class KillAura extends Module {
                             lag = false;
                             int bestSwapSlot = getBestSwapSlot();
                             blinking.set(true);
-                            mc.thePlayer.sendQueue.addToSendQueue(new C09PacketHeldItemChange(bestSwapSlot));
+                            mc.thePlayer.sendQueue.addToSendQueue(new C09PacketHeldItemChange( bestSwapSlot));
                             Raven.packetsHandler.playerSlot.set(bestSwapSlot);
                             swapped = true;
                             break;
@@ -758,6 +759,9 @@ public class KillAura extends Module {
                 }
                 break;
             case 5: // interact b
+                if (interactTicks >= 3) {
+                    interactTicks = 0;
+                }
                 interactTicks++;
                 switch (interactTicks) {
                     case 1:
@@ -766,7 +770,7 @@ public class KillAura extends Module {
                         lag = false;
                         int bestSwapSlot = getBestSwapSlot();
                         blinking.set(true);
-                        mc.thePlayer.sendQueue.addToSendQueue(new C09PacketHeldItemChange(bestSwapSlot));
+                        mc.thePlayer.sendQueue.addToSendQueue(new C09PacketHeldItemChange( bestSwapSlot));
                         Raven.packetsHandler.playerSlot.set(bestSwapSlot);
                         swapped = true;
                         break;
@@ -781,11 +785,11 @@ public class KillAura extends Module {
                         lag = true;
                         break;
                 }
+                break;
+            case 6: // interact c
                 if (interactTicks >= 3) {
                     interactTicks = 0;
                 }
-                break;
-            case 6: // interact c
                 interactTicks++;
                 switch (interactTicks) {
                     case 2:
@@ -807,11 +811,11 @@ public class KillAura extends Module {
                         lag = true;
                         break;
                 }
+                break;
+            case 7: // interact d
                 if (interactTicks >= 3) {
                     interactTicks = 0;
                 }
-                break;
-            case 7: // interact d
                 interactTicks++;
                 switch (interactTicks) {
                     case 1:
@@ -826,11 +830,7 @@ public class KillAura extends Module {
                         lag = true;
                         break;
                 }
-                if (interactTicks >= 3) {
-                    interactTicks = 0;
-                }
                 break;
-
         }
     }
 
