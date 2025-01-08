@@ -120,7 +120,7 @@ public class NoSlow extends Module {
             return;
         }
         if ((canFloat && canFloat() && mc.thePlayer.onGround && ticksOffStairs >= 30)) {
-            e.setPosY(e.getPosY() + 1E-12);
+            e.setPosY(e.getPosY() + 1E-14);
         }
     }
 

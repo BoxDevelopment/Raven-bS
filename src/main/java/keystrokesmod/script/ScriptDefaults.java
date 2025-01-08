@@ -44,6 +44,13 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.io.IOException;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
@@ -1264,6 +1271,8 @@ public class ScriptDefaults {
             return -1;
         }
 
+
+
         public static int getKeyIndex(String key) {
             return Keyboard.getKeyIndex(key);
         }
@@ -1282,6 +1291,68 @@ public class ScriptDefaults {
 
         public static void leftClick() {
             Reflection.clickMouse();
+        }
+    }
+
+    public static class config {
+        private static String CONFIG_DIR = mc.mcDataDir + File.separator + "keystrokes" + File.separator + "script_config.txt";
+        private static String SEPARATOR = ":";
+        private static String SEPARATOR_FULL = config.SEPARATOR + " ";
+
+        private static void ensureConfigFileExists() throws IOException {
+            final Path configPath = Paths.get(config.CONFIG_DIR);
+            if (Files.notExists(configPath)) {
+                Files.createDirectories(configPath.getParent());
+                Files.createFile(configPath);
+            }
+        }
+
+        public static boolean set(String key, final String value) {
+            if (key == null || key.isEmpty()) {
+                return false;
+            }
+            key = key.replace(config.SEPARATOR, "");
+            final String entry = key + config.SEPARATOR_FULL + value;
+            try {
+                ensureConfigFileExists();
+                final Path configPath = new File(config.CONFIG_DIR).toPath();
+                final List<String> lines = new ArrayList<>(Files.readAllLines(configPath));
+                boolean keyExists = false;
+                for (int i = 0; i < lines.size(); ++i) {
+                    final String line = lines.get(i);
+                    if (line.startsWith(key + config.SEPARATOR_FULL)) {
+                        lines.set(i, entry);
+                        keyExists = true;
+                        break;
+                    }
+                }
+                if (!keyExists) {
+                    lines.add(entry);
+                }
+                Files.write(configPath, lines);
+                return true;
+            }
+            catch (IOException ex) {
+                return false;
+            }
+        }
+
+        public static String get(final String key) {
+            if (key == null || key.isEmpty()) {
+                return null;
+            }
+            try {
+                ensureConfigFileExists();
+                final Path configPath = new File(config.CONFIG_DIR).toPath();
+                final List<String> lines = Files.readAllLines(configPath);
+                for (final String line : lines) {
+                    if (line.startsWith(key + config.SEPARATOR_FULL)) {
+                        return line.substring((key + config.SEPARATOR_FULL).length());
+                    }
+                }
+            }
+            catch (IOException ex) {}
+            return null;
         }
     }
 
