@@ -53,7 +53,7 @@ public class Scaffold extends Module {
     private MovingObjectPosition placeBlock;
     public AtomicInteger lastSlot = new AtomicInteger(-1);
     private String[] rotationModes = new String[]{"None", "Simple", "Strict", "Precise"};
-    private String[] fastScaffoldModes = new String[]{"Disabled", "Sprint", "Edge", "Jump A", "Jump B", "Jump C", "Float"};
+    private String[] fastScaffoldModes = new String[]{"Disabled", "Sprint", "Edge", "Jump A", "Jump B", "Jump C", "Float", "KeepY A", "KeepY B", "KeepY C"};
     private String[] precisionModes = new String[]{"Very low", "Low", "Moderate", "High", "Very high"};
     private String[] multiPlaceModes = new String[]{"Disabled", "1 extra", "2 extra"};
     public float placeYaw;
@@ -133,6 +133,17 @@ public class Scaffold extends Module {
         }
     }
 
+
+    private boolean isJumpMode() {
+        int mode = (int) fastScaffold.getInput();
+        return mode == 3 || mode == 4 || mode == 5;
+    }
+
+    private boolean isKeepYMode() {
+        int mode = (int) fastScaffold.getInput();
+        return mode == 7 || mode == 8 || mode == 9;
+    }
+
     @SubscribeEvent
     public void onPreMotion(PreMotionEvent event) {
         if (!Utils.nullCheck()) {
@@ -161,7 +172,6 @@ public class Scaffold extends Module {
     public void onJump(JumpEvent e) {
         delay = true;
     }
-
     @SubscribeEvent
     public void onPreUpdate(PreUpdateEvent e) {
         if (autoSwap.isToggled() && ModuleManager.autoSwap.spoofItem.isToggled() && lastSlot.get() != mc.thePlayer.inventory.currentItem && totalBlocks() > 0) {
@@ -182,25 +192,33 @@ public class Scaffold extends Module {
             down = false;
             placedUp = false;
         }
-        if (keepYPosition() && (fastScaffold.getInput() == 3 || fastScaffold.getInput() == 4 || fastScaffold.getInput() == 5) && mc.thePlayer.onGround) {
+        if (keepYPosition() && (isJumpMode() || isKeepYMode()) && mc.thePlayer.onGround) {
             mc.thePlayer.jump();
             add = 0;
-            if (Math.floor(mc.thePlayer.posY) == Math.floor(startPos) && fastScaffold.getInput() == 5) {
+            if (Math.floor(mc.thePlayer.posY) == Math.floor(startPos) && (fastScaffold.getInput() == 5 || fastScaffold.getInput() == 9)) {
                 placedUp = false;
             }
         }
         double original = startPos;
-        if (fastScaffold.getInput() == 3) {
+        if (fastScaffold.getInput() == 3 || fastScaffold.getInput() == 7) {  // Jump A or KeepY A
             if (groundDistance() >= 2 && add == 0) {
-                original++;
+                if (isJumpMode()) {
+                    original++;
+                }
                 add++;
             }
         }
-        else if (fastScaffold.getInput() == 4 || fastScaffold.getInput() == 5) {
+        else if (fastScaffold.getInput() == 4 || fastScaffold.getInput() == 5 ||
+                fastScaffold.getInput() == 8 || fastScaffold.getInput() == 9) {  // Jump B/C or KeepY B/C
             double distanceToGround = Utils.distanceToGroundPos(mc.thePlayer, (int) startPos);
             double threshold = Utils.isDiagonal(false) ? 1.2 : 0.6;
-            if (groundDistance() > 0 && distanceToGround > 0 && (distanceToGround < threshold) && (threshold == 0.6 ? mc.thePlayer.posY - startPos < 1.5 : true) && mc.thePlayer.fallDistance > 0 && ((!placedUp || Utils.isDiagonal(true)) || fastScaffold.getInput() == 4)) {
-                original++;
+            if (groundDistance() > 0 && distanceToGround > 0 && (distanceToGround < threshold) &&
+                    (threshold == 0.6 ? mc.thePlayer.posY - startPos < 1.5 : true) &&
+                    mc.thePlayer.fallDistance > 0 &&
+                    ((!placedUp || Utils.isDiagonal(true)) || fastScaffold.getInput() == 4 || fastScaffold.getInput() == 8)) {
+                if (isJumpMode()) {
+                    original++;
+                }
             }
         }
         double motionSetting = sprint() ? fastScaffoldMotion.getInput() : motion.getInput();
@@ -511,6 +529,7 @@ public class Scaffold extends Module {
         return !(BlockUtils.getBlock(new BlockPos(mc.thePlayer.posX, mc.thePlayer.posY + 2, mc.thePlayer.posZ)) instanceof BlockAir);
     }
 
+
     public boolean sprint() {
         if (this.isEnabled() && fastScaffold.getInput() > 0 && placeBlock != null && (!fastOnRMB.isToggled() || Mouse.isButtonDown(1))) {
             switch ((int) fastScaffold.getInput()) {
@@ -522,6 +541,9 @@ public class Scaffold extends Module {
                 case 4:
                 case 5:
                 case 6:
+                case 7:
+                case 8:
+                case 9:
                     return keepYPosition();
             }
         }
@@ -533,7 +555,11 @@ public class Scaffold extends Module {
     }
 
     private boolean keepYPosition() {
-        return this.isEnabled() && Utils.keysDown() && (fastScaffold.getInput() == 4 || fastScaffold.getInput() == 3 || fastScaffold.getInput() == 5 || fastScaffold.getInput() == 6) && (!Utils.jumpDown() || fastScaffold.getInput() == 6) && (!fastOnRMB.isToggled() || Mouse.isButtonDown(1)) && (!blockAbove() || fastScaffold.getInput() == 6);
+        return this.isEnabled() && Utils.keysDown() &&
+                (isJumpMode() || isKeepYMode() || fastScaffold.getInput() == 6) &&
+                (!Utils.jumpDown() || fastScaffold.getInput() == 6) &&
+                (!fastOnRMB.isToggled() || Mouse.isButtonDown(1)) &&
+                (!blockAbove() || fastScaffold.getInput() == 6);
     }
 
     public boolean safewalk() {
