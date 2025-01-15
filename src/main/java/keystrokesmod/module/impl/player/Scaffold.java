@@ -53,7 +53,7 @@ public class Scaffold extends Module {
     private MovingObjectPosition placeBlock;
     public AtomicInteger lastSlot = new AtomicInteger(-1);
     private String[] rotationModes = new String[]{"None", "Simple", "Strict", "Precise"};
-    private String[] fastScaffoldModes = new String[]{"Disabled", "Sprint", "Edge", "Jump A", "Jump B", "Jump C", "Float", "KeepY A", "KeepY B", "KeepY C"};
+    private String[] fastScaffoldModes = new String[]{"Disabled", "Sprint", "Edge", "Jump A", "Jump B", "Jump C", "Float", "Keep-Y"};
     private String[] precisionModes = new String[]{"Very low", "Low", "Moderate", "High", "Very high"};
     private String[] multiPlaceModes = new String[]{"Disabled", "1 extra", "2 extra"};
     public float placeYaw;
@@ -136,12 +136,12 @@ public class Scaffold extends Module {
 
     private boolean isJumpMode() {
         int mode = (int) fastScaffold.getInput();
-        return mode == 3 || mode == 4 || mode == 5;
+        return mode >= 3 || mode <= 5;
     }
 
     private boolean isKeepYMode() {
         int mode = (int) fastScaffold.getInput();
-        return mode == 7 || mode == 8 || mode == 9;
+        return mode == 7;
     }
 
     @SubscribeEvent
@@ -184,6 +184,11 @@ public class Scaffold extends Module {
                 return;
             }
         }
+
+        if (keepYPosition() && mc.thePlayer.onGround) {
+            mc.thePlayer.setPosition(mc.thePlayer.posX, mc.thePlayer.posY + 0.0001, mc.thePlayer.posZ);
+        }
+
         if (keepYPosition() && !down) {
             startPos = Math.floor(mc.thePlayer.posY);
             down = true;
@@ -195,30 +200,26 @@ public class Scaffold extends Module {
         if (keepYPosition() && (isJumpMode() || isKeepYMode()) && mc.thePlayer.onGround) {
             mc.thePlayer.jump();
             add = 0;
-            if (Math.floor(mc.thePlayer.posY) == Math.floor(startPos) && (fastScaffold.getInput() == 5 || fastScaffold.getInput() == 9)) {
+            if (Math.floor(mc.thePlayer.posY) == Math.floor(startPos) && fastScaffold.getInput() == 5) {
                 placedUp = false;
             }
         }
+
         double original = startPos;
-        if (fastScaffold.getInput() == 3 || fastScaffold.getInput() == 7) {  // Jump A or KeepY A
+        if (fastScaffold.getInput() == 3) {  // Jump A only
             if (groundDistance() >= 2 && add == 0) {
-                if (isJumpMode()) {
-                    original++;
-                }
+                original++;
                 add++;
             }
         }
-        else if (fastScaffold.getInput() == 4 || fastScaffold.getInput() == 5 ||
-                fastScaffold.getInput() == 8 || fastScaffold.getInput() == 9) {  // Jump B/C or KeepY B/C
+        else if (fastScaffold.getInput() == 4 || fastScaffold.getInput() == 5) {  // Jump B/C
             double distanceToGround = Utils.distanceToGroundPos(mc.thePlayer, (int) startPos);
             double threshold = Utils.isDiagonal(false) ? 1.2 : 0.6;
             if (groundDistance() > 0 && distanceToGround > 0 && (distanceToGround < threshold) &&
                     (threshold == 0.6 ? mc.thePlayer.posY - startPos < 1.5 : true) &&
                     mc.thePlayer.fallDistance > 0 &&
-                    ((!placedUp || Utils.isDiagonal(true)) || fastScaffold.getInput() == 4 || fastScaffold.getInput() == 8)) {
-                if (isJumpMode()) {
-                    original++;
-                }
+                    ((!placedUp || Utils.isDiagonal(true)) || fastScaffold.getInput() == 4)) {
+                original++;
             }
         }
         double motionSetting = sprint() ? fastScaffoldMotion.getInput() : motion.getInput();
@@ -542,8 +543,6 @@ public class Scaffold extends Module {
                 case 5:
                 case 6:
                 case 7:
-                case 8:
-                case 9:
                     return keepYPosition();
             }
         }
