@@ -52,16 +52,10 @@ public class Scaffold extends Module {
     public ButtonSetting tower;
     private MovingObjectPosition placeBlock;
     public AtomicInteger lastSlot = new AtomicInteger(-1);
-    private String[] rotationModes = new String[]{"None", "Simple", "Strict", "Precise", "Offset"};
-    private String[] fastScaffoldModes = new String[]{"Disabled", "Sprint", "Edge", "Jump A", "Jump B", "Jump C", "Float", "Keep-Y"};
+    private String[] rotationModes = new String[]{"None", "Simple", "Strict", "Precise"};
+    private String[] fastScaffoldModes = new String[]{"Disabled", "Sprint", "Edge", "Jump A", "Jump B", "Jump C", "Float"};
     private String[] precisionModes = new String[]{"Very low", "Low", "Moderate", "High", "Very high"};
     private String[] multiPlaceModes = new String[]{"Disabled", "1 extra", "2 extra"};
-    private float yawOffset = 0f;
-    private float lastYaw = 0f;
-    private float lastPitch = 0f;
-    private long lastRotationTime;
-    private boolean rotatingForward = false;
-    private int rotationDelay = 0;
     public float placeYaw;
     public float placePitch;
     public int at;
@@ -79,10 +73,9 @@ public class Scaffold extends Module {
     private int blockSlot = -1;
     public int blocksPlaced;
     public BlockPos previousBlock;
-    private EnumFacing[] facings = {EnumFacing.EAST, EnumFacing.WEST, EnumFacing.NORTH, EnumFacing.SOUTH, EnumFacing.UP};
-    private BlockPos[] offsets = {new BlockPos(-1, 0, 0), new BlockPos(1, 0, 0), new BlockPos(0, 0, 1), new BlockPos(0, 0, -1), new BlockPos(0, -1, 0)};
+    private EnumFacing[] facings = { EnumFacing.EAST, EnumFacing.WEST, EnumFacing.NORTH, EnumFacing.SOUTH, EnumFacing.UP };
+    private BlockPos[] offsets = { new BlockPos(-1, 0, 0), new BlockPos(1, 0, 0), new BlockPos(0, 0, 1), new BlockPos(0, 0, -1), new BlockPos(0, -1, 0) };
     private ScaffoldBlockCount scaffoldBlockCount;
-
     public Scaffold() {
         super("Scaffold", category.player);
         this.registerSetting(motion = new SliderSetting("Motion", "x", 1.0, 0.5, 1.2, 0.01));
@@ -140,90 +133,6 @@ public class Scaffold extends Module {
         }
     }
 
-
-    private double getMovementAngle() {
-        double moveForward = mc.thePlayer.movementInput.moveForward;
-        double moveStrafe = mc.thePlayer.movementInput.moveStrafe;
-        double rotation = MathHelper.wrapAngleTo180_float(mc.thePlayer.rotationYaw);
-
-        if (moveForward == 0 && moveStrafe == 0) {
-            return rotation + 180;
-        }
-
-        boolean forward = moveForward > 0;
-        boolean backwards = moveForward < 0;
-        boolean right = moveStrafe > 0;
-        boolean left = moveStrafe < 0;
-
-        if (forward) {
-            rotation += 180;
-            if (right) {
-                rotation -= 45;
-            } else if (left) {
-                rotation += 45;
-            }
-        } else if (backwards) {
-            if (right) {
-                rotation -= 135;
-            } else if (left) {
-                rotation += 135;
-            }
-        } else {
-            if (right) {
-                rotation -= 90;
-            } else if (left) {
-                rotation += 90;
-            }
-        }
-        return rotation;
-    }
-
-    private float calculateOffsetYaw() {
-        float moveAngle = (float) getMovementAngle();
-        float relativeYaw = mc.thePlayer.rotationYaw + moveAngle;
-        float normalizedYaw = (relativeYaw % 360 + 360) % 360;
-        float quad = normalizedYaw % 90;
-
-        if (quad < 5 || quad >= 85) {
-            return 65f;
-        } else if (quad >= 80 && quad < 85) {
-            return -65f;
-        } else if (quad >= 65 && quad < 85) {
-            return -60f;
-        } else if (quad < 25 || quad >= 85) {
-            return 60f;
-        } else if (quad >= 55 && quad < 85) {
-            return -50f;
-        } else if (quad < 35 || quad >= 85) {
-            return 50f;
-        } else if (quad >= 15 && quad < 45) {
-            if (quad >= 42) {
-                return 45f;
-            } else if (quad >= 38) {
-                return 48f;
-            }
-            return 50f;
-        } else {
-            if (quad >= 45 && quad < 48) {
-                return -45f;
-            } else if (quad >= 45 && quad < 52) {
-                return -48f;
-            }
-            return -50f;
-        }
-    }
-
-
-    private boolean isJumpMode() {
-        int mode = (int) fastScaffold.getInput();
-        return mode >= 3 || mode <= 5;
-    }
-
-    private boolean isKeepYMode() {
-        int mode = (int) fastScaffold.getInput();
-        return mode == 7;
-    }
-
     @SubscribeEvent
     public void onPreMotion(PreMotionEvent event) {
         if (!Utils.nullCheck()) {
@@ -232,50 +141,18 @@ public class Scaffold extends Module {
 
         int rotationInput = (int) rotation.getInput();
         if (rotationInput > 0) {
-            if (rotationInput == 4) { // offset
-                boolean shouldRotateForward = jumpFacingForward.isToggled() && mc.thePlayer.onGround && keepYPosition();
+            boolean usePlaceYaw = ((rotationInput == 2 && forceStrict) || rotationInput == 3) && placeYaw != 2000;
+            float yaw = usePlaceYaw ? placeYaw : getYaw();
+            float pitch = usePlaceYaw ? placePitch : 85;
 
-                if (shouldRotateForward) {
-                    event.setYaw(mc.thePlayer.rotationYaw);
-                    event.setPitch((float)(0 + getRandom()));
-                    delay = true;
-                    rotatingForward = true;
-                } else {
-                    if (rotatingForward) {
-                        rotationDelay = 2;
-                        rotatingForward = false;
-                    }
-
-                    yawOffset = calculateOffsetYaw();
-                    float baseYaw = getYaw();
-                    float offsetYaw = MathHelper.wrapAngleTo180_float(baseYaw + yawOffset);
-
-                    if (placeBlock != null) {
-                        lastYaw = event.getYaw();
-                        lastPitch = event.getPitch();
-                        if (System.currentTimeMillis() - lastRotationTime > 150) {
-                            placeBlock = null;
-                        }
-                    }
-
-                    event.setYaw(offsetYaw);
-                    event.setPitch(82.5f + (float)getRandom());
-                    lastRotationTime = System.currentTimeMillis();
-                }
-            } else {
-                boolean usePlaceYaw = ((rotationInput == 2 && forceStrict) || rotationInput == 3) && placeYaw != 2000;
-                float yaw = usePlaceYaw ? placeYaw : getYaw();
-                float pitch = usePlaceYaw ? placePitch : 85;
-
-                if (jumpFacingForward.isToggled() && mc.thePlayer.onGround && keepYPosition()) {
-                    yaw = mc.thePlayer.rotationYaw;
-                    pitch = (float) (0 + getRandom());
-                    delay = true;
-                }
-
-                event.setYaw(yaw);
-                event.setPitch(pitch);
+            if (jumpFacingForward.isToggled() && mc.thePlayer.onGround && keepYPosition()) {
+                yaw = mc.thePlayer.rotationYaw;
+                pitch = (float) (0 + getRandom());
+                delay = true;
             }
+
+            event.setYaw(yaw);
+            event.setPitch(pitch);
         }
         place = true;
     }
@@ -297,39 +174,32 @@ public class Scaffold extends Module {
                 return;
             }
         }
-
-        if (keepYPosition() && mc.thePlayer.onGround) {
-            mc.thePlayer.setPosition(mc.thePlayer.posX, mc.thePlayer.posY + 1E-14, mc.thePlayer.posZ);
-        }
-
         if (keepYPosition() && !down) {
             startPos = Math.floor(mc.thePlayer.posY);
             down = true;
-        } else if (!keepYPosition() || Math.floor(mc.thePlayer.posY) < startPos) {
+        }
+        else if (!keepYPosition() || Math.floor(mc.thePlayer.posY) < startPos) {
             down = false;
             placedUp = false;
         }
-        if (keepYPosition() && (isJumpMode() || isKeepYMode()) && mc.thePlayer.onGround) {
+        if (keepYPosition() && (fastScaffold.getInput() == 3 || fastScaffold.getInput() == 4 || fastScaffold.getInput() == 5) && mc.thePlayer.onGround) {
             mc.thePlayer.jump();
             add = 0;
             if (Math.floor(mc.thePlayer.posY) == Math.floor(startPos) && fastScaffold.getInput() == 5) {
                 placedUp = false;
             }
         }
-
         double original = startPos;
-        if (fastScaffold.getInput() == 3) {  // Jump A only
+        if (fastScaffold.getInput() == 3) {
             if (groundDistance() >= 2 && add == 0) {
                 original++;
                 add++;
             }
-        } else if (fastScaffold.getInput() == 4 || fastScaffold.getInput() == 5) {  // Jump B/C
+        }
+        else if (fastScaffold.getInput() == 4 || fastScaffold.getInput() == 5) {
             double distanceToGround = Utils.distanceToGroundPos(mc.thePlayer, (int) startPos);
             double threshold = Utils.isDiagonal(false) ? 1.2 : 0.6;
-            if (groundDistance() > 0 && distanceToGround > 0 && (distanceToGround < threshold) &&
-                    (threshold == 0.6 ? mc.thePlayer.posY - startPos < 1.5 : true) &&
-                    mc.thePlayer.fallDistance > 0 &&
-                    ((!placedUp || Utils.isDiagonal(true)) || fastScaffold.getInput() == 4)) {
+            if (groundDistance() > 0 && distanceToGround > 0 && (distanceToGround < threshold) && (threshold == 0.6 ? mc.thePlayer.posY - startPos < 1.5 : true) && mc.thePlayer.fallDistance > 0 && ((!placedUp || Utils.isDiagonal(true)) || fastScaffold.getInput() == 4)) {
                 original++;
             }
         }
@@ -415,7 +285,8 @@ public class Scaffold extends Module {
                 if (rayCasted == null && (Utils.overPlaceable(-1) || keepYPosition()) && precisionInput != 4) {
                     searchYaw = 180;
                     searchPitch = new float[]{65, 25};
-                } else {
+                }
+                else {
                     break;
                 }
             }
@@ -494,7 +365,8 @@ public class Scaffold extends Module {
             if (((S12PacketEntityVelocity) e.getPacket()).getEntityID() == mc.thePlayer.getEntityId()) {
                 e.setCanceled(true);
             }
-        } else if (e.getPacket() instanceof S27PacketExplosion) {
+        }
+        else if (e.getPacket() instanceof S27PacketExplosion) {
             e.setCanceled(true);
         }
     }
@@ -538,7 +410,7 @@ public class Scaffold extends Module {
                 }
             }
         }
-        BlockPos[] additionalOffsets = { // placement shit
+        BlockPos[] additionalOffsets = { // adjust these for perfect placement
                 pos.add(-1, 0, 0),
                 pos.add(1, 0, 0),
                 pos.add(0, 0, 1),
@@ -562,7 +434,7 @@ public class Scaffold extends Module {
                 }
             }
         }
-        BlockPos[] additionalOffsets2 = { // placement shit
+        BlockPos[] additionalOffsets2 = { // adjust these for perfect placement
                 new BlockPos(-1, 0, 0),
                 new BlockPos(1, 0, 0),
                 new BlockPos(0, 0, 1),
@@ -639,7 +511,6 @@ public class Scaffold extends Module {
         return !(BlockUtils.getBlock(new BlockPos(mc.thePlayer.posX, mc.thePlayer.posY + 2, mc.thePlayer.posZ)) instanceof BlockAir);
     }
 
-
     public boolean sprint() {
         if (this.isEnabled() && fastScaffold.getInput() > 0 && placeBlock != null && (!fastOnRMB.isToggled() || Mouse.isButtonDown(1))) {
             switch ((int) fastScaffold.getInput()) {
@@ -651,7 +522,6 @@ public class Scaffold extends Module {
                 case 4:
                 case 5:
                 case 6:
-                case 7:
                     return keepYPosition();
             }
         }
@@ -663,15 +533,11 @@ public class Scaffold extends Module {
     }
 
     private boolean keepYPosition() {
-        return this.isEnabled() && Utils.keysDown() &&
-                (isJumpMode() || isKeepYMode() || fastScaffold.getInput() == 6) &&
-                (!Utils.jumpDown() || fastScaffold.getInput() == 6) &&
-                (!fastOnRMB.isToggled() || Mouse.isButtonDown(1)) &&
-                (!blockAbove() || fastScaffold.getInput() == 6);
+        return this.isEnabled() && Utils.keysDown() && (fastScaffold.getInput() == 4 || fastScaffold.getInput() == 3 || fastScaffold.getInput() == 5 || fastScaffold.getInput() == 6) && (!Utils.jumpDown() || fastScaffold.getInput() == 6) && (!fastOnRMB.isToggled() || Mouse.isButtonDown(1)) && (!blockAbove() || fastScaffold.getInput() == 6);
     }
 
     public boolean safewalk() {
-        return this.isEnabled() && safeWalk.isToggled() && (!keepYPosition() || fastScaffold.getInput() == 3 || totalBlocks() == 0);
+        return this.isEnabled() && safeWalk.isToggled() && (!keepYPosition() || fastScaffold.getInput() == 3 || totalBlocks() == 0) ;
     }
 
     public boolean stopRotation() {
@@ -685,25 +551,33 @@ public class Scaffold extends Module {
         if (moveForward == 0.0) {
             if (moveStrafe == 0.0) {
                 yaw = 180.0f;
-            } else if (moveStrafe > 0.0) {
+            }
+            else if (moveStrafe > 0.0) {
                 yaw = 90.0f;
-            } else if (moveStrafe < 0.0) {
+            }
+            else if (moveStrafe < 0.0) {
                 yaw = -90.0f;
             }
-        } else if (moveForward > 0.0) {
+        }
+        else if (moveForward > 0.0) {
             if (moveStrafe == 0.0) {
                 yaw = 180.0f;
-            } else if (moveStrafe > 0.0) {
+            }
+            else if (moveStrafe > 0.0) {
                 yaw = 135.0f;
-            } else if (moveStrafe < 0.0) {
+            }
+            else if (moveStrafe < 0.0) {
                 yaw = -135.0f;
             }
-        } else if (moveForward < 0.0) {
+        }
+        else if (moveForward < 0.0) {
             if (moveStrafe == 0.0) {
                 yaw = 0.0f;
-            } else if (moveStrafe > 0.0) {
+            }
+            else if (moveStrafe > 0.0) {
                 yaw = 45.0f;
-            } else if (moveStrafe < 0.0) {
+            }
+            else if (moveStrafe < 0.0) {
                 yaw = -45.0f;
             }
         }
@@ -718,7 +592,8 @@ public class Scaffold extends Module {
         if (!extra && mc.playerController.onPlayerRightClick(mc.thePlayer, mc.theWorld, heldItem, block.getBlockPos(), block.sideHit, block.hitVec)) {
             if (silentSwing.isToggled()) {
                 mc.thePlayer.sendQueue.addToSendQueue(new C0APacketAnimation());
-            } else {
+            }
+            else {
                 mc.thePlayer.swingItem();
                 if (!(autoSwap.isToggled() && ModuleManager.autoSwap.spoofItem.isToggled())) {
                     mc.getItemRenderer().resetEquippedProgress();
@@ -729,14 +604,16 @@ public class Scaffold extends Module {
             if (heldItem.stackSize == 0) {
                 blockSlot = -1;
             }
-        } else if (extra) {
-            float f = (float) (block.hitVec.xCoord - (double) block.getBlockPos().getX());
-            float f1 = (float) (block.hitVec.yCoord - (double) block.getBlockPos().getY());
-            float f2 = (float) (block.hitVec.zCoord - (double) block.getBlockPos().getZ());
+        }
+        else if (extra) {
+            float f = (float)(block.hitVec.xCoord - (double)block.getBlockPos().getX());
+            float f1 = (float)(block.hitVec.yCoord - (double)block.getBlockPos().getY());
+            float f2 = (float)(block.hitVec.zCoord - (double)block.getBlockPos().getZ());
             mc.thePlayer.sendQueue.addToSendQueue(new C08PacketPlayerBlockPlacement(block.getBlockPos(), block.sideHit.getIndex(), heldItem, f, f1, f2));
             if (silentSwing.isToggled()) {
                 mc.thePlayer.sendQueue.addToSendQueue(new C0APacketAnimation());
-            } else {
+            }
+            else {
                 mc.thePlayer.swingItem();
                 mc.getItemRenderer().resetEquippedProgress();
             }
@@ -783,7 +660,8 @@ public class Scaffold extends Module {
         double z = 0.5;
         if (facing != EnumFacing.UP && facing != EnumFacing.DOWN) {
             y += 0.5;
-        } else {
+        }
+        else {
             x += 0.3;
             z += 0.3;
         }

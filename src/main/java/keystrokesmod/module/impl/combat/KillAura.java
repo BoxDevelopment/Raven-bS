@@ -62,7 +62,7 @@ public class KillAura extends Module {
     private ButtonSetting silentSwing;
     private ButtonSetting weaponOnly;
 
-    private String[] autoBlockModes = new String[] { "Manual", "Vanilla", "Fake", "Partial", "Interact A", "Interact B", "Interact C", "Interact D", "Hypixel" };
+    private String[] autoBlockModes = new String[] { "Manual", "Vanilla", "Fake", "Partial", "Interact A", "Interact B", "Interact C", "Interact D", "Hypixel"};
     private String[] rotationModes = new String[] { "Silent", "Lock view", "None" };
     private String[] sortModes = new String[] { "Distance", "Health", "Hurttime", "Yaw" };
 
@@ -82,6 +82,7 @@ public class KillAura extends Module {
     private boolean firstCycle;
     private boolean partialDown;
     private int partialTicks;
+    private boolean blocked;
 
     // blink related
     private ConcurrentLinkedQueue<Packet> blinkedPackets = new ConcurrentLinkedQueue<>();
@@ -628,10 +629,10 @@ public class KillAura extends Module {
                 break;
             case 2: // fake
             case 4: // interact a
-            case 8: // Hypixel
             case 5: // interact b
             case 6: // interact c
             case 7: // interact d
+            case 8:
                 Reflection.setItemInUse(this.blockingClient = blockState);
                 break;
             case 3: // partial
@@ -684,6 +685,7 @@ public class KillAura extends Module {
         }
         return true;
     }
+
 
     private void handleAutoBlock(double distance) {
         boolean inAttackDistance = inRange(target, attackRange.getInput() - 0.005);
@@ -831,66 +833,29 @@ public class KillAura extends Module {
                         break;
                 }
                 break;
-            case 8: // Hypixel
-
-                if (interactTicks >= 3) {
+            case 8: // hypixel
+                if (interactTicks >= 2) {
                     interactTicks = 0;
                 }
-                if (sendUnBlock) {
-                    if (Raven.packetsHandler.C07.get()) {
-                        sendUnBlock = false;
-                        return;
-                    }
-                }
                 interactTicks++;
-                if (firstCycle) {
-                    switch (interactTicks) {
-                        case 1:
-                            blinking.set(true);
-                            //int bestSwapSlot = getBestSwapSlot();
-                            //mc.thePlayer.sendQueue.addToSendQueue(new C09PacketHeldItemChange(bestSwapSlot));
-                            //Raven.packetsHandler.playerSlot.set(bestSwapSlot);
-                            sendUnBlock = true;
-                            swapped = true;
-                            lag = false;
-                            break;
-                        case 2:
-                            //mc.thePlayer.sendQueue.addToSendQueue(new C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem));
-                            //Raven.packetsHandler.playerSlot.set(mc.thePlayer.inventory.currentItem);
-                            swapped = false;
-                            handleInteractAndAttack(distance, true, true, swung);
-                            break;
-                        case 3:
-                            sendBlockPacket();
-                            releasePackets(); // release
-                            firstCycle = false;
-                            lag = true;
-                            break;
-                    }
-                } else {
-                    switch (interactTicks) {
-                        case 1:
-                            break;
-                        case 2:
-                            lag = false;
-                            int bestSwapSlot = getBestSwapSlot();
-                            blinking.set(true);
-                            mc.thePlayer.sendQueue.addToSendQueue(new C09PacketHeldItemChange(bestSwapSlot));
-                            Raven.packetsHandler.playerSlot.set(bestSwapSlot);
-                            swapped = true;
-                            break;
-                        case 3:
-                            mc.thePlayer.sendQueue.addToSendQueue(new C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem));
-                            Raven.packetsHandler.playerSlot.set(mc.thePlayer.inventory.currentItem);
-                            swapped = false;
-                            handleInteractAndAttack(distance, true, true, swung);
-                            sendBlockPacket();
-                            releasePackets(); // release
-                            lag = true;
-                            break;
-                    }
+                switch (interactTicks) {
+                    case 1:
+                        blinking.set(true);
+                        if (blocked) {
+                            mc.thePlayer.sendQueue.addToSendQueue(new C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, BlockPos.ORIGIN, DOWN));
+                            blocked = false;
+                        }
+                        break;
+                    case 2:
+                        handleInteractAndAttack(distance,true,true,swung);
+                        sendBlockPacket();
+                        blocked = true;
+                        releasePackets();
+                        break;
                 }
                 break;
+
+
         }
     }
 
