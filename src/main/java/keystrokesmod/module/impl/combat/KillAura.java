@@ -834,7 +834,7 @@ public class KillAura extends Module {
                 }
                 break;
             case 8: // hypixel
-                if (interactTicks >= 2) {
+                if (interactTicks >= 3) {
                     interactTicks = 0;
                 }
                 interactTicks++;
