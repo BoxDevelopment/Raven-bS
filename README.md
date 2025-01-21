@@ -8,3 +8,7 @@ Quality features like AntiFireball, ItemESP, and more. No Bloat, no junk, based 
 
 # Discord
 [https://discord.gg/ZWttByQD5N](https://discord.gg/ZWttByQD5N)
+
+
+todo:
+fix keep sprint not working on myau
