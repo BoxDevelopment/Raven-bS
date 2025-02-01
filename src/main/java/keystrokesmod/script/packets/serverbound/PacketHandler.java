@@ -83,6 +83,9 @@ public class PacketHandler {
             else if (packet instanceof S2APacketParticles) {
                 sPacket = new S2A((S2APacketParticles) packet);
             }
+            else if (packet instanceof S32PacketConfirmTransaction) {
+                sPacket = new S32((S32PacketConfirmTransaction) packet);
+            }
             else if (packet instanceof S06PacketUpdateHealth) {
                 sPacket = new S06((S06PacketUpdateHealth) packet);
             }
