@@ -8,3 +8,7 @@ Quality features like AntiFireball, ItemESP, and more. No Bloat, no junk, based 
 
 # Discord
 [https://discord.gg/ZWttByQD5N](https://discord.gg/ZWttByQD5N)
+
+# Building
+
+When you import your project into IntelliJ, you need to set the gradle jvm to the Java 17 JDK or higher in the gradle tab, and the Project SDK to the Java 1.8 JDK
