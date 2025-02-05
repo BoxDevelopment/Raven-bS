@@ -535,30 +535,32 @@ public class Scaffold extends Module {
             if (ModuleManager.tower.placeExtraBlock) {
                 placeBlock(0, -1);
             }
+
             if (fastScaffoldKeepY && !ModuleManager.tower.canTower()) {
                 ++keepYTicks;
                 if ((int) mc.thePlayer.posY > (int) startYPos) {
+                    boolean isDownwardMotion = mc.thePlayer.motionY < -0.1;
                     switch (mode) {
                         case 1:
-                            if (!firstKeepYPlace && keepYTicks == 8 || keepYTicks == 11) {
+                            if ((!firstKeepYPlace && keepYTicks == 8 || keepYTicks == 11) && !isDownwardMotion) {
                                 placeBlock(1, 0);
                                 firstKeepYPlace = true;
                             }
                             break;
                         case 2:
-                            if (!firstKeepYPlace && keepYTicks == 8 || firstKeepYPlace && keepYTicks == 7) {
+                            if ((!firstKeepYPlace && keepYTicks == 8 || firstKeepYPlace && keepYTicks == 7) && !isDownwardMotion) {
                                 placeBlock(1, 0);
                                 firstKeepYPlace = true;
                             }
                             break;
                         case 3:
-                            if (!firstKeepYPlace && keepYTicks == 7) {
+                            if (!firstKeepYPlace && keepYTicks == 7 && !isDownwardMotion) {
                                 placeBlock(1, 0);
                                 firstKeepYPlace = true;
                             }
                             break;
                         case 6:
-                            if (!firstKeepYPlace && keepYTicks == 3) {
+                            if (!firstKeepYPlace && keepYTicks == 3 && !isDownwardMotion) {
                                 placeBlock(1, 0);
                                 firstKeepYPlace = true;
                             }
@@ -578,12 +580,10 @@ public class Scaffold extends Module {
 
             if (dontDisable && ++disableTicks >= 2) {
                 isEnabled = false;
-                //Utils.print("Extra tick");
             }
             if (!dontDisable) {
                 isEnabled = false;
             }
-
 
             if (!isEnabled) {
                 disabledModule = dontDisable = false;
