@@ -172,6 +172,7 @@ public class Scaffold extends Module {
                 if (scaffoldTicks > 1) {
                     rotateForward();
                     mc.thePlayer.jump();
+                    mc.thePlayer.motionY *= 0.90;
                     Utils.setSpeed(getSpeed(getSpeedLevel()) - Utils.randomizeDouble(0.0003, 0.0001));
                     if (fastScaffold.getInput() == 5 || fastScaffold.getInput() == 2 && firstKeepYPlace) {
                         lowhop = true;
@@ -539,28 +540,27 @@ public class Scaffold extends Module {
             if (fastScaffoldKeepY && !ModuleManager.tower.canTower()) {
                 ++keepYTicks;
                 if ((int) mc.thePlayer.posY > (int) startYPos) {
-                    boolean isDownwardMotion = mc.thePlayer.motionY < -0.1;
                     switch (mode) {
                         case 1:
-                            if ((!firstKeepYPlace && keepYTicks == 8 || keepYTicks == 11) && !isDownwardMotion) {
+                            if (!firstKeepYPlace && keepYTicks == 8 || keepYTicks == 11) {
                                 placeBlock(1, 0);
                                 firstKeepYPlace = true;
                             }
                             break;
                         case 2:
-                            if ((!firstKeepYPlace && keepYTicks == 8 || firstKeepYPlace && keepYTicks == 7) && !isDownwardMotion) {
+                            if (!firstKeepYPlace && keepYTicks == 8 || firstKeepYPlace && keepYTicks == 7) {
                                 placeBlock(1, 0);
                                 firstKeepYPlace = true;
                             }
                             break;
                         case 3:
-                            if (!firstKeepYPlace && keepYTicks == 7 && !isDownwardMotion) {
+                            if (!firstKeepYPlace && keepYTicks == 7) {
                                 placeBlock(1, 0);
                                 firstKeepYPlace = true;
                             }
                             break;
                         case 6:
-                            if (!firstKeepYPlace && keepYTicks == 3 && !isDownwardMotion) {
+                            if (!firstKeepYPlace && keepYTicks == 3) {
                                 placeBlock(1, 0);
                                 firstKeepYPlace = true;
                             }
