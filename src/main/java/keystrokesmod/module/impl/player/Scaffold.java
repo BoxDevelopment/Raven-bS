@@ -69,6 +69,7 @@ public class Scaffold extends Module {
     private boolean firstKeepYPlace;
     private boolean rotatingForward;
     private int keepYTicks;
+    private int jumpTicks;
     private boolean lowhop;
     private int rotationDelay;
     private int blockSlot = -1;
@@ -172,7 +173,6 @@ public class Scaffold extends Module {
                 if (scaffoldTicks > 1) {
                     rotateForward();
                     mc.thePlayer.jump();
-                    mc.thePlayer.motionY *= 0.90;
                     Utils.setSpeed(getSpeed(getSpeedLevel()) - Utils.randomizeDouble(0.0003, 0.0001));
                     if (fastScaffold.getInput() == 5 || fastScaffold.getInput() == 2 && firstKeepYPlace) {
                         lowhop = true;
@@ -528,6 +528,13 @@ public class Scaffold extends Module {
             if (KillAura.target != null || ModuleManager.killAura.stoppedTargeting) {
                 return;
             }
+            if (mc.thePlayer.onGround) {
+                jumpTicks = 0;
+            } else if (jumpTicks == 1 && fastScaffold.getInput() > 0) {
+                mc.thePlayer.motionX *= 0.9;
+                mc.thePlayer.motionZ *= 0.9;
+            }
+            jumpTicks++;
 
             hasSwapped = true;
             int mode = (int) fastScaffold.getInput();
