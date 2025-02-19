@@ -4,7 +4,6 @@ import keystrokesmod.Raven;
 import keystrokesmod.clickgui.ClickGui;
 import keystrokesmod.clickgui.components.impl.CategoryComponent;
 import keystrokesmod.clickgui.components.impl.ModuleComponent;
-import keystrokesmod.event.PostSetSliderEvent;
 import keystrokesmod.mixin.impl.accessor.*;
 import keystrokesmod.module.Module;
 import keystrokesmod.module.ModuleManager;
@@ -39,7 +38,6 @@ import net.minecraft.network.Packet;
 import net.minecraft.realms.RealmsBridge;
 import net.minecraft.scoreboard.Team;
 import net.minecraft.util.*;
-import net.minecraftforge.common.MinecraftForge;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -121,6 +119,10 @@ public class ScriptDefaults {
         public static void print(Object object) {
             String s = String.valueOf(object);
             Utils.sendRawMessage(s);
+        }
+
+        public static void print(Message component) {
+            mc.thePlayer.addChatMessage(component.component);
         }
 
         public static boolean isDiagonal() {
@@ -265,8 +267,8 @@ public class ScriptDefaults {
             return mc.thePlayer.getItemInUseDuration();
         }
 
-        public static void log(String message) {
-            System.out.println(message);
+        public static void log(final Object obj) {
+            Utils.log.info(obj);
         }
 
         public static void setSneaking(boolean sneak) {
@@ -849,8 +851,7 @@ public class ScriptDefaults {
             if (setting == null) {
                 return;
             }
-            double prev = setting.getInput();
-            setting.setValueWithEvent(value);
+            setting.setValueRawWithEvent(value);
         }
 
         public void setKey(String moduleName, String name, int code) {
@@ -1424,9 +1425,13 @@ public class ScriptDefaults {
         public static List<String> getBookContents() {
             if (mc.currentScreen instanceof GuiScreenBook) {
                 List<String> contents = new ArrayList<>();
-                int max = Math.min(128 / mc.fontRendererObj.FONT_HEIGHT, ((IAccessorGuiScreenBook) mc.currentScreen).getBookContents().size());
+                List<IChatComponent> bookContents = ((IAccessorGuiScreenBook) mc.currentScreen).getBookContents();
+                if (bookContents == null) {
+                    return contents;
+                }
+                int max = Math.min(128 / mc.fontRendererObj.FONT_HEIGHT, bookContents.size());
                 for (int line = 0; line < max; ++line) {
-                    IChatComponent lineStr = ((IAccessorGuiScreenBook) mc.currentScreen).getBookContents().get(line);
+                    IChatComponent lineStr = bookContents.get(line);
                     contents.add(lineStr.getUnformattedText());
                 }
                 if (!contents.isEmpty()) {

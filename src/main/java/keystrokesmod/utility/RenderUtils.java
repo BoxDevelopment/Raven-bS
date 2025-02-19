@@ -221,7 +221,7 @@ public class RenderUtils {
 
     public static void renderEntity(Entity e, int type, double expand, double shift, int color, boolean damage) {
         if (e instanceof EntityLivingBase) {
-            float partialTicks = ((IAccessorMinecraft) mc).getTimer().renderPartialTicks;;
+            float partialTicks = ((IAccessorMinecraft) mc).getTimer().renderPartialTicks;
             double x = e.lastTickPosX + (e.posX - e.lastTickPosX) * (double) partialTicks - mc.getRenderManager().viewerPosX;
             double y = e.lastTickPosY + (e.posY - e.lastTickPosY) * (double) partialTicks - mc.getRenderManager().viewerPosY;
             double z = e.lastTickPosZ + (e.posZ - e.lastTickPosZ) * (double) partialTicks - mc.getRenderManager().viewerPosZ;
@@ -256,7 +256,8 @@ public class RenderUtils {
                 }
 
                 GlStateManager.enableDepth();
-            } else {
+            }
+            else {
                 int i;
                 if (type == 4) {
                     EntityLivingBase en = (EntityLivingBase) e;
@@ -272,9 +273,11 @@ public class RenderUtils {
                     net.minecraft.client.gui.Gui.drawRect(i + 1, b, i + 3, 74, Color.darkGray.getRGB());
                     net.minecraft.client.gui.Gui.drawRect(i + 1, 0, i + 3, b, hc);
                     GlStateManager.enableDepth();
-                } else if (type == 6) {
-                    d3p(x, y, z, 0.699999988079071D, 45, 1.5F, color, color == 0);
-                } else {
+                }
+                else if (type == 6) {
+                    drawCircle(x, y, z, 0.699999988079071D, 45, 1.5F, color, color == 0);
+                }
+                else {
                     if (color == 0) {
                         color = Utils.getChroma(2L, 0L);
                     }
@@ -567,7 +570,7 @@ public class RenderUtils {
 
     }
 
-    public static void d3p(double x, double y, double z, double radius, int sides, float lineWidth, int color, boolean chroma) {
+    public static void drawCircle(double x, double y, double z, double radius, int sides, float lineWidth, int color, boolean chroma) {
         float a = (float) (color >> 24 & 255) / 255.0F;
         float r = (float) (color >> 16 & 255) / 255.0F;
         float g = (float) (color >> 8 & 255) / 255.0F;

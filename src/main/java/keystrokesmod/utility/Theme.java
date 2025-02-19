@@ -31,18 +31,25 @@ public enum Theme {
             return convert(values()[index].firstGradient, values()[index].secondGradient, (Math.sin(System.currentTimeMillis() / 1.0E8 * Settings.timeMultiplier.getInput() * 400000.0 + delay * Settings.offset.getInput()) + 1.0) * 0.5).getRGB();
         }
         else if (index == 0) {
-            return Utils.getChroma(2, (long) delay);
+            return getChromaOffset(2, (long) delay);
         }
         return -1;
+    }
+
+    public static int getChromaOffset(long speed, long delay) {
+        double offset = Settings.offset.getInput() * delay;
+        long time = System.currentTimeMillis() + (long) offset;
+        float hue = (float) (time % (15000L / speed)) / (15000.0F / (float) speed);
+        return Color.getHSBColor(hue, 1.0F, 1.0F).getRGB();
     }
 
     public static int getGradient(Color firstGradient, Color secondGradient, double delay) {
         return convert(firstGradient, secondGradient, (Math.sin(System.currentTimeMillis() / 1.0E8 * 0.5 * 400000.0 + delay * 0.550000011920929) + 1.0) * 0.5).getRGB();
     }
 
-    public static Color convert(Color color, Color color2, double n) {
-        double n2 = 1.0 - n;
-        return new Color((int) (color.getRed() * n + color2.getRed() * n2), (int) (color.getGreen() * n + color2.getGreen() * n2), (int) (color.getBlue() * n + color2.getBlue() * n2));
+    public static Color convert(Color color, Color color2, double delay) {
+        double n2 = 1.0 - delay;
+        return new Color((int) (color.getRed() * delay + color2.getRed() * n2), (int) (color.getGreen() * delay + color2.getGreen() * n2), (int) (color.getBlue() * delay + color2.getBlue() * n2));
     }
 
     public static int[] getGradients(int index) {
